@@ -1,0 +1,118 @@
+---
+title: "day2_rmd"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+this is a non-coding area
+
+```{r}
+here::here('data', 'gapminder5.csv') #Pasting home directoy to gapminder5
+
+gapminder <- read.csv(here::here('data', 'gapminder5.csv'))
+#everyone is working in same repo on same file, this allows anyone using same files from same folder, but with a different total filepath, to b e on the same page (ie allows more dynamic filepathing)
+
+str(gapminder) #shows that strings are factors
+```
+
+```{r}
+gapminder$country <- as.character(gapminder$country)
+str(gapminder)
+```
+```{r}
+# for (i in (1:nrow(gapminder)) {
+#   gapminder[i, 'gdp'] <- gapminder[i,'pop'] * gapminder[i,'gdpPercap']
+# }
+
+obs<- (1:nrow(gapminder))
+       
+for (i in obs) { # the function to repeat is enclosed in braces {}
+  gapminder[i, "gdp"] <- gapminder[i, "pop"] * gapminder[i, "gdpPercap"]
+}
+
+gapminder['gdp2_vec'] <- gapminder$pop*gapminder$gdpPercap #my version
+
+summary(gapminder$gdp2_vec- gapminder$gdp) #functions are identical
+
+
+gapminder$log_gdp <- log(gapminder$gdp)
+gapminder$log_pop <- log(gapminder$pop)
+gapminder$log_gdpPercap <- log(gapminder$gdpPercap)
+```
+
+```{r}
+#finding life exp over time. has mean life expectancy by year inc?
+
+subset(gapminder$year,gapminder$lifeExp>mean(gapminder$lifeExp) )
+
+```
+
+
+
+
+```{r}
+#which contintent has highest mean life exp
+z <- 0
+  
+for (i in unique(gapminder$continent)) {
+    mean_le<- mean(gapminder$lifeExp[gapminder$continent == i], na.rm=TRUE)
+    if (z < mean_le) {
+        z=mean_le
+        }
+    print(paste0(i, ": ", z))
+}
+```
+
+```{r}
+
+conts <- unique(gapminder$continent)
+years <- unique(gapminder$year)
+for (i in conts) {
+    print(paste0("Continent: ", i))
+    for (j in years) {
+        sd_le <- sd(gapminder$lifeExp[gapminder$continent == i & 
+                                              gapminder$year == j], 
+                        na.rm = T)
+        print(paste0(j, ": ", sd_le))
+  }
+}
+```
+
+```{r}
+#apply
+vars <- gapminder[, c("lifeExp", "pop", "gdpPercap")]
+apply(vars, 2, mean)
+```
+
+```{r}
+lapply(gapminder, mean)
+```
+
+```{r}
+output_vec<- sapply(years, function(x) mean(gapminder$lifeExp[gapminder$year == x])) 
+cbind(output_vec, years)
+
+#find th emean of life expectency when year is equal to x.
+#this is similar to a for loop
+```
+
+```{r}
+#lifeexp sd for years between 1987-2002
+i <- 1987
+while (i <= 2002) {
+    sd_var= sd(
+      gapminder$lifeExp[gapminder$year == i]
+      )
+    
+    print(
+      paste0(i, ": ", sd_var)
+      )
+    
+    i <-i + 5
+}
+
+```
+
