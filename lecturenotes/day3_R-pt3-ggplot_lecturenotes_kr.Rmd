@@ -68,6 +68,8 @@ ggplot(data = <DATA FRAME>) +
   <GEOM_FUNCTION>(mapping = aes(<VARIABLES>))
 ```
 
+
+
 To demonstrate with an example, let's re-create the scatterplot we made in Day 1 using data from Gapminder. Recall that we used the 2007 data subset and plotted the relationship between life expectancy on the y-axis and GDP per capita on the x-axis. Using the structure above, we would proceed as follows:
 
 1. Provide the data in the `data = ` argument of the initial `ggplot()` function. 
@@ -76,10 +78,11 @@ To demonstrate with an example, let's re-create the scatterplot we made in Day 1
 
 Altogether, it looks like this:
 
-```{r scatterplot 1}
-ggplot(data = gapminder07) + 
-  geom_point(mapping = aes(x = gdpPercap, y = lifeExp))
+```{r}
+ggplot(data = gapminder07) + geom_point(aes(x= gdpPercap, y= lifeExp))+
+  labs(title = 'Relationship btwn life exp and gdpPercap')
 ```
+
 
 Recall how we added a horizontal line to the scatterplot on Day 1. We can replicate that in ggplot by adding another layer using the `geom_hline()` function, which generates another geometric object (specifically, a horizontal line). Notice that `data = ` and `mapping = ` have been dropped here: as with all functions in R, since these are the first arguments, R assumes that the first inputs provided to the function are for these first arguments.
 
@@ -99,9 +102,50 @@ ggplot(data = gapminder07) +
        x = "GDP per capita", y = "Life expectancy")
 ```
 
+
+
+```{r}
+ggplot(data=gapminder07) + 
+  geom_point(aes(y= log(gdpPercap), x=log(pop), color=continent)) +
+  labs(title="Relationship between ln(pop) & ln(gdpPercap)", y='ln(gdpPercap)', x='ln(pop)')
+```
+
+
 As you can see, the grammar of graphics used in ggplot2 breaks down the information that goes into each graphic into several layers, each of which you can customize.
 
 # Preparing your data
+
+
+
+
+```{r}
+#plot a column chart hydroelectric power generated over time
+generation_df %>% 
+  melt(id.vars='datetime',
+       variable.name= 'type') %>%
+  filter(., type %in% c('large_hydro','small_hydro')) %>%
+  mutate(datetime = as_datetime(datetime)) %>%
+  ggplot() +
+  geom_point(aes(x=datetime, y=value, color=type))+
+  labs(title="Relationship between datetime & hydroelectric power output by size)", 
+       y='hydroelectric power output',
+       x='datetime')
+```
+
+```{r}
+#plot a column chart hydroelectric power generated over time
+generation_df %>% 
+  melt(id.vars='datetime',
+       variable.name= 'type') %>%
+  filter(., type %in% c('large_hydro','small_hydro')) %>%
+  mutate(datetime = as_datetime(datetime)) %>%
+  ggplot() +
+  geom_bar(stat='identity', aes(x=datetime, y=value, color=type))+
+  labs(title="Relationship between datetime & hydroelectric power output by size)", 
+       y='hydroelectric power output',
+       x='datetime')
+```
+
 
 Recall the role of pipes (`%>%`) in `dplyr` this morning. Since `dplyr` and `ggplot2` are both part of tidyverse, they are designed to work well together. You can use a series of pipes to prepare your data to be in the appropriate format, subset, etc before plotting.
 
@@ -214,6 +258,46 @@ merged_energy %>%
 
 Usually when we plot multiple geometric objects in one graphic, we are trying to plot the same relationship across different groups in the data. We will explore how this works in the below section on [visualizing grouped data](#groupeddata).
 
+
+
+```{r}
+#ex3  create a column chart that shows the total output per source.
+# change the color of the columns to "darkred"
+# add a horizontal line indicating the mean output across all sources. Use the cheatsheet to id the geomfxn that you ned.
+# add a meaningful title and axis lables using labs(). 
+
+
+generation_df %>% 
+  melt(id.vars='datetime',
+       variable.name= 'type') %>%
+  #filter(., type %in% c('large_hydro','small_hydro')) %>%
+  mutate(datetime = as_datetime(datetime)) %>%
+  ggplot() +
+  geom_bar(stat='identity', aes(x=datetime, y=value, color=type))+ 
+  #geom_abline(x=mean())
+  labs(title="Relationship between datetime & hydroelectric power output by type)", 
+       y='hydroelectric power output',
+       x='datetime')
+
+```
+
+```{r}
+generation_df %>% 
+  melt(id.vars='datetime',
+       variable.name= 'type') %>% #long_merged_energy
+  #filter(., type %in% c('large_hydro','small_hydro')) %>%
+  mutate(datetime = as_datetime(datetime)) %>% #long_merged_energy
+  group_by(type) %>%
+  summarize(value_sum= sum(value)) %>%
+  ggplot() +
+  geom_col(aes(x=type, y=value_sum), fill="darkred")+ 
+  geom_hline(aes(yintercept=mean(value_sum)))+
+  labs(title="Relationship between datetime & hydroelectric power output by type)", 
+       y='hydroelectric power output',
+       x='datetime')
+```
+
+
 ## Other geometric objects
 
 There are many, many more geometric objects that you can create using ggplot. For a full list, see the cheatsheet and reference guide linked above. Several extension packages add even more geometric objects.
@@ -250,6 +334,7 @@ imports %>%
   scale_x_datetime(date_labels="%H:%M", date_breaks="12 hours") +
   labs(title="Energy imports over time in California", subtitle="Hourly data from September 3-9, 2018",
        x="Hour", y="Amount imported (MW)")
+
 ```
 
 The most common use of scale layers is to specify and adjust color palettes used when plotting grouped data. We will see some examples of this in the [below section on that topic](#groupeddata).
@@ -311,6 +396,18 @@ There are several `stat` functions in ggplot that enable you to conduct statisti
 
 Since these are relatively rare and more advanced use cases of ggplot, we will not explore them in detail here. If you are interested, see [Chapter 3.7 of the R for data science online textbook](http://r4ds.had.co.nz/data-visualisation.html#statistical-transformations).
 
+
+
+#### types of layers
+
+so review, there are lots of types of layers:
+ggplot: needed
+geom_ : adds geometric objects
+labs: labels
+scale: changes lense of how data is presented
+theme: can manipulate aspects of visual aspects of plot
+coordinate layer: can rotate plot, and other stuff
+
 # Visualizing grouped data {#groupeddata}
 
 A common task in data visualization is plotting variables that are grouped, in order to make comparisons across groups or to show how a particular trend breaks down on a group level. For example, instead of visualizing energy generation as a whole, we may want to visualize generation from each source relative to ther sources. 
@@ -355,6 +452,30 @@ long_merged_energy %>%
 ```
 
 Remember from earlier that we may need to use either `col = ` or `fill = ` depending on the type of geometric object whose appearance we are trying to change. This is the same when we are mapping data to the colors. For example, in order to change the color of the objects in an area plot or bar chart, we will need to use `fill = ` rather than `col = `.
+
+
+
+```{r}
+#exercise 4
+#create a line plot that compares generation of wind, solar, and geothermal energy overtime.
+generation_df %>% 
+  melt(id.vars='datetime',
+       variable.name= 'type') %>%
+  filter(., type %in% c('wind','solar','geothermal')) %>%
+  mutate(datetime = as_datetime(datetime)) %>%
+  ggplot() +
+  geom_line( aes(x=datetime, y=value, color=type), size=1.5)+ 
+  scale_x_datetime(date_labels="%H:%M", date_breaks="12 hours") +
+  scale_color_brewer(palette="Accent", name="Energy Source") + 
+  labs(title="Wind vs Solar vs Geothermal generation", 
+       y='output(MV)',
+       x='hour') #+
+  #scale
+
+
+```
+
+
 
 ## Position adjustment
 
@@ -407,6 +528,25 @@ long_merged_energy %>%
 ```
 
 We might look at this plot and think it's not particularly helpful. To simplify the above plot, we can do two things: (1) use the categories contained in the `regroup` data frame to reduce the number of categories; and (2) switch to `position="fill"` instead of `position="stack"`.
+
+
+```{r}
+long_merged_energy_regroup<- long_merged_energy%>%
+  rename(type= source) %>%
+  merge(regroup, by='type') %>%
+  mutate(date=lubridate::date(datetime)) %>%
+  group_by(date,group) %>%
+  summarise(output=sum(output))
+
+  # Pipe data into ggplot
+  long_merged_energy_regroup%>%
+    ggplot() + 
+    geom_line(aes(x=date, y=output, group=group, linetype=group), size=1) +
+    labs(title="Output by source group over time", subtitle="Data collected during September 3-9, 2018",
+       x="Date", y="Output (MW)")
+  #summarise(output=sum(output)) %>% 
+```
+
 
 ```{r area stack 2}
 # Make sure regroup data has been imported
@@ -473,6 +613,93 @@ gapminder07 %>%
   scale_color_discrete(name="Continent") +
   labs(title="Life expectancy as a function of GDP per capita in 2007", 
        x="Logged GDP per capita", y="Life expectancy")
+```
+
+
+
+
+```{r}
+#exercise5: visualize the average output for each hour of the day, grouped by source
+
+  
+  
+long_merged_energy%>%
+rename(type= source) %>%
+merge(regroup, by='type') %>%
+mutate(hour=lubridate::hour(datetime)) %>%
+group_by(hour,group) %>%
+summarise(output=mean(output))%>%
+ggplot() + 
+geom_line(aes(x=hour, y=output, color=group, linetype=group), size=1) +
+#scale_x_datetime(date_labels="%H", date_breaks="1 hours") +
+#scale_size_continuous(name="Population")+
+scale_color_brewer(palette="Accent", name="Energy Source")
+labs(title="Mean Output by source group over hour",
+     subtitle="Data collected during September 3-9, 2018",
+     x="hour",
+     y="Output (MW)")
+
+#2
+long_merged_energy%>%
+rename(type= source) %>%
+merge(regroup, by='type') %>%
+mutate(hour=lubridate::hour(datetime)) %>%
+group_by(hour,group) %>%
+summarise(output=mean(output))%>%
+ggplot() + 
+geom_area(aes(x=hour, y=output, fill=group, linetype=group), size=1) +
+#scale_x_datetime(date_labels="%H", date_breaks="1 hours") +
+#scale_size_continuous(name="Population")+
+scale_color_brewer(palette="Accent", name="Energy Source")
+labs(title="Mean Output by source group over hour",
+     subtitle="Data collected during September 3-9, 2018",
+     x="hour",
+     y="Output (MW)")
+
+```
+
+
+```{r}
+#facets
+
+long_merged_energy%>%
+rename(type= source) %>%
+merge(regroup, by='type') %>%
+mutate(hour=lubridate::hour(datetime)) %>%
+group_by(hour,group) %>%
+summarise(output=mean(output))%>%
+ggplot() + 
+geom_line(aes(x=hour, y=output), size=1) +
+facet_wrap(~group, scales="free")
+#scale_x_datetime(date_labels="%H:%M", date_breaks="1 hours") +
+#scale_size_continuous(name="Population")+
+#scale_color_brewer(palette="Accent", name="Energy Source")
+labs(title="Mean Output by source group over hour",
+     subtitle="Data collected during September 3-9, 2018",
+     x="hour",
+     y="Output (MW)")
+```
+
+
+
+```{r}
+#compare generation patterns for each source in facets. color the lines using the "group" varialbe in regroup.
+
+
+long_merged_energy%>%
+rename(type= source) %>%
+merge(regroup, by='type') %>%
+#mutate(hour=lubridate::(datetime)) %>%
+group_by(group) %>%
+#summarise(output=mean(output))%>%
+ggplot() + 
+geom_line(aes(x=datetime, y=output, color=group), size=1) +
+facet_wrap(~type, scales="free")+
+labs(title="Mean Output by source group over hour",
+     subtitle="Data collected during September 3-9, 2018",
+     x="hour",
+     y="Output (MW)")+
+theme(legend.position='bottom',axis.text.x=element_text(angle=30,hjust=1,vjust=0.5))
 ```
 
 ## Facets

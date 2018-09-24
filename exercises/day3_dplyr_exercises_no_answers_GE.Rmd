@@ -23,20 +23,36 @@ knitr::opts_chunk$set(echo=answers, eval=answers,
 Read both California energy datasets. Make sure you use `lubridate` to recode the `datetime` variable. Use `dplyr` to do this.
 
 
-```{asis}
-
-```
-
 ```{r}
+#import
 library(dplyr)
-library(lubridate)
+library(lubridate) #best way to deal with datetimes
 generation <- read.csv(here::here("data/generation.csv"), 
                        stringsAsFactors = F)
 imports <- read.csv(here::here("data/imports.csv"), 
                     stringsAsFactors = F)
 
+```
+
+
+```{asis}
+
+```
+
+```{r}
+#datetimes
+library(lubridate) #best way to deal with datetimes
+
 generation <- mutate(generation, datetime = as_datetime(datetime))
 imports <- mutate(imports, datetime = as_datetime(datetime))
+```
+
+```{r}
+#exploring
+
+str(generation)
+
+head(generation)
 ```
 
 
@@ -44,10 +60,39 @@ imports <- mutate(imports, datetime = as_datetime(datetime))
 
 Using dplyr and pipes, merge the two datasets and then melt the resulting dataframe to make it tidy.
 
+
+Principles of ???tidy data??? (R for Data Science - Wickham & Grolemund)
+-Each variable must have its own column.
+-Each observation must have its own row.
+-Each value must have its own cell.
+Often, we want to make wide data long (or tidy) for analysis
+
+melt ???> make data long
+dcast ???> make data wide
+recast???> melt then cast data
+
 ```{asis}
 ### Answer
 ```
 
+```{r}
+library(dplyr)
+library(reshape2)
+
+long_gen <- melt(generation, id.vars='datetime', #the unit of observation. 
+                variable.name= 'source', 
+                value.name="usage"); 
+ 
+long_gen
+
+```
+
+```{r}
+long_gen[order(long_gen$datetime)[1:20], ] #ordering and viwing the first 20 rows and all columns
+```
+
+
+merge/join
 ```{r}
 
 ```
